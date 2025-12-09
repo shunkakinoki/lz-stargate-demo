@@ -402,43 +402,6 @@ async function main() {
 			);
 			console.log("  - Data (new):", newCalldata);
 
-			// Simulate the transaction first to get revert reason
-			console.log("\n🔍 Simulating transaction...");
-			try {
-				await client.simulateContract({
-					address: sendStep.transaction.to as Address,
-					abi: STARGATE_SEND_ABI,
-					functionName: "send",
-					args: [decoded.sendParam, decoded.fee, newRefundAddress],
-					value: txValue,
-					account,
-				});
-				console.log("  - ✅ Simulation passed");
-			} catch (simError: unknown) {
-				console.error("  - ❌ Simulation failed:");
-				if (simError instanceof Error) {
-					console.error("    - Error:", simError.message);
-					// Try to extract revert reason
-					if ("data" in simError && simError.data) {
-						console.error("    - Revert data:", simError.data);
-					}
-					if ("cause" in simError && simError.cause) {
-						console.error("    - Cause:", simError.cause);
-					}
-					// Check for common revert reasons
-					const errorMsg = simError.message.toLowerCase();
-					if (errorMsg.includes("insufficient") || errorMsg.includes("balance")) {
-						console.error("    - 💡 Likely cause: Insufficient USDC balance");
-					} else if (errorMsg.includes("allowance") || errorMsg.includes("approval")) {
-						console.error("    - 💡 Likely cause: Missing USDC approval");
-					} else if (errorMsg.includes("fee") || errorMsg.includes("quote")) {
-						console.error("    - 💡 Likely cause: Stale quote or incorrect fee amount");
-					}
-				}
-				console.error("\n⚠️  Skipping this route due to simulation failure");
-				continue; // Skip to next route instead of throwing
-			}
-
 			// Send the transaction with overridden refund address
 			console.log("\n⏳ Sending transaction...");
 			try {
